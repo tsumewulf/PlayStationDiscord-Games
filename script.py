@@ -153,6 +153,61 @@ if __name__ == '__main__':
 
 				urllib.request.urlretrieve(game_icon, icon_file)
 				
+		elif platform == 'vita':
+			for title_id in titles[platform]:
+				url = create_url(title_id)
+				print(url)
+				content = requests.get(url)
+
+				if content.status_code != 200:
+					print('skipping', title_id)
+					continue
+				try:
+					content = content.json()
+				except ValueError:
+					continue
+				
+				game_name = content['names'][0]['name']
+				
+				print(game_name)
+
+				if not content['icons'] or len(content['icons']) == 0:
+					print('\tno icons')
+					continue
+
+				game_icon = None
+
+				for icon in content['icons']:
+					if icon['type'] == '512x512':
+						game_icon = icon['icon']
+						break
+				
+				if game_icon == None:
+					print('\tno 512x512 icon')
+					continue
+
+				done[platform].append({
+					"name": game_name,
+					"titleId": title_id
+				})
+
+				if not os.path.exists(platform):
+					os.mkdir(platform)
+
+				icon_file = f'{platform}/{title_id}.png'
+
+				if table_writer != None:
+					table_writer.value_matrix.append([
+						f'<img src="{icon_file}?raw=true" width="100" height="100">',
+						game_name
+					])
+
+				if os.path.exists(icon_file):
+					print('\ticon file exists')
+					continue
+
+				urllib.request.urlretrieve(game_icon, icon_file)
+				
 				print('\tsaved')
 	
 	if table_writer != None:
